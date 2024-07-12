@@ -5,6 +5,7 @@ return {
       servers = {
         ruff_lsp = {
           mason = false,
+          enabled = false,
         },
       },
     },
