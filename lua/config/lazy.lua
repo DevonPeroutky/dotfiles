@@ -14,7 +14,7 @@ require("lazy").setup({
     -- import/override with your plugins
     { import = "plugins" },
     -- add pyright stuff?
-    -- { import = "lazyvim.plugins.extras.lang.python" },
+    { import = "lazyvim.plugins.extras.lang.python" },
   },
   defaults = {
     -- By default, only LazyVim plugins will be lazy-loaded. Your custom plugins will load during startup.
