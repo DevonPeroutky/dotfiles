@@ -10,7 +10,8 @@ return {
             jump_prev = "[[",
             jump_next = "]]",
             refresh = "gr",
-            open = "<M-CR>",
+            -- open = "<M-CR>",
+            open = "<leader>cp",
           },
         },
         suggestion = {
