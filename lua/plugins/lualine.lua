@@ -12,7 +12,7 @@ return {
       sections = {
         lualine_b = { "branch" },
         lualine_c = {
-          -- LazyVim.lualine.root_dir(),
+          LazyVim.lualine.root_dir(),
           -- {
           --   "diagnostics",
           --   symbols = {
@@ -23,7 +23,7 @@ return {
           --   },
           -- },
           -- { "filetype", icon_only = true, separator = "", padding = { left = 1, right = 0 } },
-          -- { LazyVim.lualine.pretty_path() },
+          { LazyVim.lualine.pretty_path() },
         },
         lualine_x = {
           -- {
@@ -40,7 +40,7 @@ return {
           --   end,
           --   icon = " LSP:",
           -- },
-          -- -- Other status components...
+          -- Other status components...
           -- {
           --   function()
           --     return require("noice").api.status.command.get()
@@ -52,28 +52,28 @@ return {
           --     return LazyVim.ui.fg("Statement")
           --   end,
           -- },
-          -- {
-          --   function()
-          --     return require("noice").api.status.mode.get()
-          --   end,
-          --   cond = function()
-          --     return package.loaded["noice"] and require("noice").api.status.mode.has()
-          --   end,
-          --   color = function()
-          --     return LazyVim.ui.fg("Constant")
-          --   end,
-          -- },
-          -- {
-          --   function()
-          --     return "  " .. require("dap").status()
-          --   end,
-          --   cond = function()
-          --     return package.loaded["dap"] and require("dap").status() ~= ""
-          --   end,
-          --   color = function()
-          --     return LazyVim.ui.fg("Debug")
-          --   end,
-          -- },
+          {
+            function()
+              return require("noice").api.status.mode.get()
+            end,
+            cond = function()
+              return package.loaded["noice"] and require("noice").api.status.mode.has()
+            end,
+            color = function()
+              return LazyVim.ui.fg("Constant")
+            end,
+          },
+          {
+            function()
+              return "  " .. require("dap").status()
+            end,
+            cond = function()
+              return package.loaded["dap"] and require("dap").status() ~= ""
+            end,
+            color = function()
+              return LazyVim.ui.fg("Debug")
+            end,
+          },
           -- {
           --   require("lazy.status").updates,
           --   cond = require("lazy.status").has_updates,
@@ -100,10 +100,10 @@ return {
           format = "{kind_icon}{symbol.name:Normal}",
           hl_group = "lualine_c_normal",
         })
-      -- table.insert(opts.sections.lualine_c, {
-      --   symbols and symbols.get,
-      --   cond = symbols and symbols.has,
-      -- })
+      table.insert(opts.sections.lualine_c, {
+        symbols and symbols.get,
+        cond = symbols and symbols.has,
+      })
     end
 
     return opts
