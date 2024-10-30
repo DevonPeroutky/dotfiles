@@ -5,3 +5,6 @@
 -- Styling --
 -- Remove extra padding in signcolumn
 vim.opt.signcolumn = "auto"
+
+vim.opt.fillchars:append({ vert = " " }) -- Use a space instead
+vim.opt.fillchars:append({ horiz = " " }) -- Use a space instead

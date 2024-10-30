@@ -1,3 +1,6 @@
 -- Keymaps are automatically loaded on the VeryLazy event
 -- Default keymaps that are always set: https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/keymaps.lua
--- Add any additional keymaps here
+--- Override LazyVim's default terminal keymaps and behavior
+-- Remove default LazyVim terminal keymaps
+-- keymap.del("n", "<leader>ft")
+-- keymap.del("n", "<leader>fT")
