@@ -21,31 +21,6 @@ return {
         },
       }
     end,
-    keys = function()
-      return {
-        -- stylua: ignore start
-        { "<leader>x", group = "  Debug" },
-        { "<leader>xB", function() require("dap").set_breakpoint(vim.fn.input("Breakpoint condition: ")) end, desc = "Breakpoint Condition", },
-        { "<leader>xb", function() require("dap").toggle_breakpoint() end, desc = "Toggle Breakpoint", },
-        { "<leader>xc", function() require("dap").continue() end, desc = "Continue", },
-        { "<leader>xa", function() require("dap").continue({ before = get_args }) end, desc = "Run with Args", },
-        { "<leader>xC", function() require("dap").run_to_cursor() end, desc = "Run to Cursor", },
-        { "<leader>xg", function() require("dap").goto_() end, desc = "Go to Line (No Execute)", },
-        { "<leader>xi", function() require("dap").step_into() end, desc = "Step Into", },
-        { "<leader>xj", function() require("dap").down() end, desc = "Down", },
-        { "<leader>xk", function() require("dap").up() end, desc = "Up", },
-        { "<leader>xl", function() require("dap").run_last() end, desc = "Run Last", },
-        { "<leader>xO", function() require("dap").step_out() end, desc = "Step Out", },
-        { "<leader>xo", function() require("dap").step_over() end, desc = "Step Over", },
-        { "<leader>xp", function() require("dap").pause() end, desc = "Pause", },
-        { "<leader>xr", function() require("dap").repl.toggle() end, desc = "Toggle REPL", },
-        { "<leader>xs", function() require("dap").session() end, desc = "Session", },
-        { "<leader>xt", function() require("dap").terminate() end, desc = "Terminate", },
-        { "<leader>xw", function() require("dap.ui.widgets").hover() end, desc = "Widgets", },
-        { "<leader>xPt", function() require("dap-python").test_method() end, desc = "Debug Method", ft = "python", },
-        { "<leader>xPc", function() require("dap-python").test_class() end, desc = "Debug Class", ft = "python", },
-      }
-    end,
   },
   {
     "rcarriga/nvim-dap-ui",
@@ -75,30 +50,84 @@ return {
   {
     "mfussenegger/nvim-dap-python",
     ft = "python",
+    priority = 1000, -- Ensure this loads before other dap-python configs
+    keys = {
+      { "<leader>dPt", function() require("dap-python").test_method() end, desc = "Debug Method" },
+      { "<leader>dPc", function() require("dap-python").test_class() end, desc = "Debug Class" },
+      { "<leader>dpi", "<cmd>DapPythonInfo<cr>", desc = "Python Environment Info" },
+    },
     config = function()
-      local function get_python_path()
-        -- Check for virtual environment first
+      -- Robust Python path detection with environment identification
+      local function get_python_info()
+        local mason_py = vim.fn.stdpath("data") .. "/mason/packages/debugpy/venv/bin/python"
+        local function path_exists(p)
+          return vim.fn.executable(p) == 1
+        end
+
+        -- Priority 1: Active virtual environment
         local venv = vim.env.VIRTUAL_ENV
         if venv and venv ~= "" then
           local venv_python = venv .. "/bin/python"
-          if vim.fn.executable(venv_python) == 1 then
-            return venv_python
+          if path_exists(venv_python) then
+            return { path = venv_python, source = "Virtual Environment", venv_path = venv }
           end
         end
-        
-        -- Fallback to system python
+
+        -- Priority 2: Mason debugpy
+        if path_exists(mason_py) then
+          return { path = mason_py, source = "Mason", venv_path = nil }
+        end
+
+        -- Priority 3: System Python
         local python_paths = { "python3", "python" }
         for _, python in ipairs(python_paths) do
-          if vim.fn.executable(python) == 1 then
-            return python
+          if path_exists(python) then
+            local full_path = vim.fn.exepath(python)
+            return { path = full_path, source = "System", venv_path = nil }
           end
         end
-        
-        return "python3"
+
+        -- Fallback
+        return { path = "python3", source = "Fallback", venv_path = nil }
       end
-      
-      require("dap-python").setup(get_python_path())
+
+      -- Global function for inspection command
+      _G.dap_python_info = get_python_info
+
+      local python_info = get_python_info()
+      require("dap-python").setup(python_info.path)
       require("dap-python").test_runner = "pytest"
+
+      -- Create custom command to inspect Python environment
+      vim.api.nvim_create_user_command("DapPythonInfo", function()
+        local info = get_python_info()
+        local lines = {
+          "DAP Python Environment:",
+          "├─ Source: " .. info.source,
+          "├─ Path: " .. info.path,
+        }
+
+        if info.venv_path then
+          table.insert(lines, "├─ Virtual Env: " .. info.venv_path)
+        end
+
+        -- Check pytest availability
+        local pytest_check =
+          vim.fn.system(info.path .. " -c \"import pytest; print('pytest', pytest.__version__)\" 2>/dev/null")
+        if vim.v.shell_error == 0 then
+          local version = pytest_check:match("pytest%s+([%d%.]+)")
+          table.insert(lines, "├─ Pytest: ✓ Available" .. (version and (" (v" .. version .. ")") or ""))
+        else
+          table.insert(lines, "├─ Pytest: ✗ Not available")
+        end
+
+        table.insert(lines, "└─ Active VIRTUAL_ENV: " .. (vim.env.VIRTUAL_ENV or "None"))
+
+        local content = table.concat(lines, "\n")
+        vim.notify(content, vim.log.levels.INFO, { title = "🐍 DAP Python Info" })
+      end, {
+        desc = "Show DAP Python environment information",
+      })
     end,
   },
 }
