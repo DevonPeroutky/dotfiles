@@ -64,7 +64,17 @@ return {
           return vim.fn.executable(p) == 1
         end
 
-        -- Priority 1: Active virtual environment
+        -- Priority 1: venv-selector's active/cached virtual environment
+        local ok, venv_selector = pcall(require, "venv-selector")
+        if ok and venv_selector.python then
+          local venv_python = venv_selector.python()
+          if venv_python and venv_python ~= "" and path_exists(venv_python) then
+            local venv_path = venv_python:match("^(.+)/bin/python")
+            return { path = venv_python, source = "venv-selector", venv_path = venv_path }
+          end
+        end
+
+        -- Priority 2: Active virtual environment
         local venv = vim.env.VIRTUAL_ENV
         if venv and venv ~= "" then
           local venv_python = venv .. "/bin/python"
@@ -73,12 +83,12 @@ return {
           end
         end
 
-        -- Priority 2: Mason debugpy
+        -- Priority 3: Mason debugpy
         if path_exists(mason_py) then
           return { path = mason_py, source = "Mason", venv_path = nil }
         end
 
-        -- Priority 3: System Python
+        -- Priority 4: System Python
         local python_paths = { "python3", "python" }
         for _, python in ipairs(python_paths) do
           if path_exists(python) then
