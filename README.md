@@ -33,6 +33,11 @@ Its first launch installs plugins through lazy.nvim. Neovide uses the same edito
 configuration, with its GUI settings in `lua/config/neovide.lua` beneath the
 Neovim config. Monaco comes with macOS; the Brewfile installs Inconsolata Nerd Font.
 
+On Macs, Neovim uses the active developer tools' `MacOSX.sdk` for native builds
+unless `SDKROOT` is already set. This avoids selecting an incompatible newer SDK
+installed alongside the active toolchain, including when launching Neovide from
+Finder. No macOS version is hardcoded.
+
 ## Existing configuration and private files
 
 Setup backs up each conflicting file, directory, or symlink beside its original

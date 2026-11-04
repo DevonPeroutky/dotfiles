@@ -18,7 +18,7 @@ else
   missing 'Homebrew is missing; install it from https://brew.sh'
 fi
 
-for tool in git fzf wget mise nvim wt codex neovide uv node pnpm; do
+for tool in git fzf fd wget mise nvim wt codex neovide uv node pnpm; do
   command -v "$tool" >/dev/null 2>&1 || missing "Command not on PATH: $tool (open a new login shell after setup)"
 done
 

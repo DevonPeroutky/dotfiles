@@ -1,5 +1,6 @@
 brew "git"
 brew "fzf"
+brew "fd"
 brew "wget"
 brew "mise"
 brew "neovim"
