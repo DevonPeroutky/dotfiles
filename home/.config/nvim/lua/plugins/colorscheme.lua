@@ -24,11 +24,12 @@ return {
         floats = "dark",
       },
       on_highlights = function(hl, c)
-        -- Function parameters - cyan/teal
+        -- Function parameters - yellow; properties - teal
         hl["@parameter.builtin"] = { fg = c.fg } -- 'type=' part
-        hl["@property"] = { fg = c.fg } -- Alternative for keyword args
-        hl["@parameter"] = { fg = c.fg }
-        hl["@variable.parameter"] = { fg = c.fg }
+        hl["@property"] = { fg = c.green1 }
+        hl["@variable.member"] = { fg = c.green1 }
+        hl["@parameter"] = { fg = c.yellow }
+        hl["@variable.parameter"] = { fg = c.yellow }
 
         -- Import statements and module names - cyan/teal
         hl["@module"] = { fg = c.fg }
