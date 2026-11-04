@@ -3,8 +3,15 @@ if not vim.g.neovide then
   return
 end
 
+-- Hide the idle command area below the statusline in the GUI.
+vim.o.cmdheight = 0
+
 -- Main font configuration for ASCII characters
 vim.o.guifont = "Monaco:h12"
+
+-- Fit 24-pixel rows into the fullscreen display instead of leaving a partial
+-- row below the statusline. May need retuning for a different display or scale.
+vim.o.linespace = 5
 
 -- Set background to black
 vim.g.neovide_opacity = 1.0
