@@ -1,0 +1,48 @@
+name: Release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: read
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
+        with:
+          go-version-file: go.mod
+      - name: Check formatting and vet
+        run: |
+          test -z "$(gofmt -l cmd internal)"
+          go vet ./...
+      - name: Verify generated documentation
+        run: |
+          go run ./cmd/dotfiles docs --output "$RUNNER_TEMP/cli-docs"
+          diff -ru docs/cli "$RUNNER_TEMP/cli-docs"
+      - name: Build Apple Silicon executable
+        env:
+          GOOS: darwin
+          GOARCH: arm64
+          CGO_ENABLED: '0'
+          VERSION: ${{ github.ref_name }}
+        run: |
+          go build -trimpath -ldflags "-s -w -X main.version=$VERSION" -o dist/dotfiles-darwin-arm64 ./cmd/dotfiles
+          cd dist
+          sha256sum dotfiles-darwin-arm64 > checksums.txt
+      - name: Publish release with complete assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ github.ref_name }}
+        run: |
+          gh release create "$VERSION" dist/dotfiles-darwin-arm64 dist/checksums.txt --verify-tag --generate-notes --draft
+          if [[ "$VERSION" == *-* ]]; then
+            gh release edit "$VERSION" --draft=false --prerelease --latest=false
+          else
+            gh release edit "$VERSION" --draft=false --latest
+          fi

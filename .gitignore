@@ -12,3 +12,7 @@ secrets.zsh
 local.zsh
 *.dotfiles-backup.*
 __pycache__/
+
+# Go CLI build output.
+/dotfiles
+/dist/

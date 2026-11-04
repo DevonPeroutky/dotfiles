@@ -6,16 +6,37 @@ absolute symlinks into this checkout; keep it where you want it to live.
 
 ## Set up a Mac
 
-Install Apple's Command Line Tools (`xcode-select --install`) and
-[Homebrew](https://brew.sh/) first. Then clone this repo anywhere and run:
+Only Apple Silicon macOS is supported. Install Apple's Command Line Tools
+(`xcode-select --install`) and [Homebrew](https://brew.sh/) first.
+
+Download the CLI from [GitHub Releases](https://github.com/DevonPeroutky/dotfiles/releases).
+After the first release is published, these commands download the latest version,
+verify its checksum, and install it on your PATH:
+
+```sh
+curl -fLO https://github.com/DevonPeroutky/dotfiles/releases/latest/download/dotfiles-darwin-arm64
+curl -fLO https://github.com/DevonPeroutky/dotfiles/releases/latest/download/checksums.txt
+mkdir -p ~/.local/bin
+shasum -a 256 -c checksums.txt &&
+  chmod +x dotfiles-darwin-arm64 &&
+  mv dotfiles-darwin-arm64 ~/.local/bin/dotfiles
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+The CLI needs an existing checkout; it does not download configuration or remember
+its location. Clone this repo where you want it to stay, then run:
 
 ```sh
 git clone git@github.com:DevonPeroutky/dotfiles.git ~/Development/dotfiles
 cd ~/Development/dotfiles
-./scripts/setup --install
+dotfiles setup --install
 exec zsh -l
-./scripts/doctor
+dotfiles doctor
 ```
+
+Commands use the current directory as the checkout by default. From elsewhere,
+pass `--repo ~/Development/dotfiles` to setup or doctor. Go is only needed to build
+the CLI from source, not to run the downloaded executable.
 
 `--install` installs the Brewfile packages without upgrading existing packages,
 then installs the Node LTS and pnpm versions declared in mise. Homebrew owns
@@ -23,7 +44,7 @@ applications and system tools, including uv; mise owns Node and pnpm. Versions
 float deliberately: this reproduces configuration, rather than freezing the
 entire machine. See [mise's global configuration documentation](https://mise.jdx.dev/configuration).
 
-Run `./scripts/setup` to link configuration without installing tools. Both modes
+Run `dotfiles setup` to link configuration without installing tools. Both modes
 can be run repeatedly. Installation failures stop setup before links are changed.
 Setup doesn't uninstall old tools, remove old package-manager installations,
 change macOS preferences, or configure other terminal apps.
@@ -69,16 +90,16 @@ setup so it cannot write through them into another directory or checkout.
 
 ## Everyday use
 
-- `.zprofile` finds Homebrew at the Apple Silicon or Intel installation path.
+- `.zprofile` loads Homebrew from `/opt/homebrew`, the Apple Silicon installation path.
 - `.zshrc` loads shared `env.zsh`, optional `local.zsh`, optional `secrets.zsh`,
   `aliases.zsh`, then `tools.zsh` for mise and WorkTrunk initialization.
 - Edit linked configuration normally, then review and commit changes in this repo.
 - Add system tools to `packages/Brewfile` and runtimes to the mise config; rerun
-  `./scripts/setup --install` to install them.
+  `dotfiles setup --install` to install them.
 - Keep personal utility scripts in `home/.local/bin/` when needed, and explicitly
-  add their paths to the `managed` array in `scripts/common.sh`.
+  add their paths to the explicit list in `internal/config/config.go`.
 - After moving this checkout, rerun setup to replace the old absolute symlinks.
-- `./scripts/doctor` reports missing packages, commands, fonts, private-file setup,
+- `dotfiles doctor` reports missing packages, commands, fonts, private-file setup,
   and incorrect links. It makes no changes and exits nonzero for unresolved checks.
   A missing secrets file is a reminder; it is optional if no tools need credentials.
 
@@ -87,14 +108,83 @@ entire home directory into Git. New configuration files must be added to the
 managed list. The existing `~/.local/bin/env` is no longer needed by this shell
 configuration; its PATH behavior is part of the tracked `env.zsh`.
 
-## Verify changes
+## CLI development and documentation
+
+Install Go matching `go.mod`, then build locally:
 
 ```sh
-for file in scripts/*; do bash -n "$file" || break; done
-for file in home/.zshrc home/.zprofile home/.config/zsh/*.zsh; do zsh -n "$file" || break; done
-python3 -m unittest discover -s tests -v
+go build -o /tmp/dotfiles ./cmd/dotfiles
+/tmp/dotfiles --help
+/tmp/dotfiles setup --help
+/tmp/dotfiles docs --output docs/cli
 ```
 
-Integration tests use temporary homes and a checkout path containing spaces. They
-do not install packages or touch your actual home directory. Python is only needed
-to run tests; setup and doctor use the Bash shipped with macOS.
+The [command reference](docs/cli/dotfiles.md) is generated from the same Cobra
+command definitions as `--help`. Regenerate and commit it when commands change.
+The CLI has no saved settings, checkout registry, or background updates.
+
+Before committing, check formatting, build, and inspect changed shell syntax:
+
+```sh
+gofmt -l cmd internal
+go vet ./...
+go build -o /tmp/dotfiles ./cmd/dotfiles
+for file in home/.zshrc home/.zprofile home/.config/zsh/*.zsh; do zsh -n "$file" || break; done
+```
+
+There is no automated test suite. Manually check filesystem changes using a
+disposable `HOME` and checkout (including paths with spaces), never your real home.
+Check repeat runs, conflict backups, private-file migration, and unsafe-parent
+refusal. Doctor should report findings without changing configuration. Package
+installation is a separate manual check on a Mac you intend to provision.
+
+## Releases and updates
+
+CLI checks run on pushes to `main` that change `cmd/`, `internal/`, Go module
+files, generated CLI documentation, or workflow files. They check formatting,
+run vet, verify generated documentation, and cross-compile the Apple Silicon
+executable on Ubuntu. Configuration-only changes do not trigger CLI checks.
+There is no automated test suite or Mac runner.
+
+After pushing your changes and checking that CI passed, publish a release:
+
+```sh
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+Use a new stable version tag for each release. The release workflow repeats the
+checks, builds the binary, and uploads it with `checksums.txt` to a draft release
+before publishing it. Tags containing a hyphen (such as `v0.0.1-dev`) publish
+prereleases; stable tags publish as latest. Self-update skips prereleases.
+Tag pushes always run the release workflow;
+GitHub does not apply path filters to tags. Release versions come from the tag;
+local builds report `dev`. Releases are unsigned. If publishing fails and leaves
+a draft release, inspect or delete that draft before rerunning the workflow.
+
+On each Mac, update the installed CLI explicitly:
+
+```sh
+dotfiles --version
+dotfiles self-update
+dotfiles --version
+```
+
+Self-update needs no Go installation or checkout. It selects GitHub's latest
+published stable release, downloads that release's Apple Silicon executable and
+checksum, verifies SHA-256, then replaces the running executable using a rename
+from a temporary file in the same directory. Download or verification failures
+leave the installed executable unchanged; temporary downloads are removed.
+The installation directory must be writable. Symlinked executables update their
+resolved target. An already-current release does nothing; a local `dev` build
+is replaced by the published release. GitHub's latest release is authoritative,
+so selecting an older release as latest also selects it for self-update.
+
+Releases must be publicly accessible; private repositories and authenticated
+downloads are not supported. Before the first release exists, self-update
+reports a download error. To get self-update into an older installed binary,
+rebuild it or repeat the download instructions above once.
+
+Updating the CLI does not update your configuration checkout. Run
+`git pull --ff-only` there to bring in shell and editor changes, then rerun setup
+if managed links changed or `setup --install` if package declarations changed.

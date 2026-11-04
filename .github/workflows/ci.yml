@@ -1,0 +1,41 @@
+name: CLI checks
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'cmd/**'
+      - 'internal/**'
+      - 'go.mod'
+      - 'go.sum'
+      - 'docs/cli/**'
+      - '.github/workflows/**'
+permissions:
+  contents: read
+concurrency:
+  group: cli-checks-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
+        with:
+          go-version-file: go.mod
+      - name: Check formatting and vet
+        run: |
+          test -z "$(gofmt -l cmd internal)"
+          go vet ./...
+      - name: Verify generated documentation
+        run: |
+          go run ./cmd/dotfiles docs --output "$RUNNER_TEMP/cli-docs"
+          diff -ru docs/cli "$RUNNER_TEMP/cli-docs"
+      - name: Compile Apple Silicon executable
+        env:
+          GOOS: darwin
+          GOARCH: arm64
+          CGO_ENABLED: '0'
+        run: go build -trimpath -o "$RUNNER_TEMP/dotfiles" ./cmd/dotfiles
