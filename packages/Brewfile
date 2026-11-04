@@ -1,0 +1,11 @@
+brew "git"
+brew "fzf"
+brew "wget"
+brew "mise"
+brew "neovim"
+brew "worktrunk"
+brew "uv"
+
+cask "codex"
+cask "neovide-app"
+cask "font-inconsolata-nerd-font"

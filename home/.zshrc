@@ -1,0 +1,5 @@
+source "$HOME/.config/zsh/env.zsh"
+[[ ! -r "$HOME/.config/zsh/local.zsh" ]] || source "$HOME/.config/zsh/local.zsh"
+[[ ! -r "$HOME/.config/zsh/secrets.zsh" ]] || source "$HOME/.config/zsh/secrets.zsh"
+source "$HOME/.config/zsh/aliases.zsh"
+source "$HOME/.config/zsh/tools.zsh"

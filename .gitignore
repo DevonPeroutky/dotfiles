@@ -6,3 +6,9 @@ debug
 foo.*
 *.log
 data
+
+# Private shell files must never be committed, wherever they are placed.
+secrets.zsh
+local.zsh
+*.dotfiles-backup.*
+__pycache__/

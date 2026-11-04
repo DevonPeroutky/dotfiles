@@ -1,0 +1,2 @@
+# Copy to ~/.config/zsh/local.zsh for settings specific to this Mac.
+# export EDITOR=nvim

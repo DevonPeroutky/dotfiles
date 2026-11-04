@@ -1,5 +1,7 @@
--- neovide-config.lua
--- Ensure this file is sourced in your LazyVim config
+-- Keep GUI options and keymaps out of terminal Neovim.
+if not vim.g.neovide then
+  return
+end
 
 -- Main font configuration for ASCII characters
 vim.o.guifont = "Monaco:h12"
