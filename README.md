@@ -9,34 +9,67 @@ absolute symlinks into this checkout; keep it where you want it to live.
 Only Apple Silicon macOS is supported. Install Apple's Command Line Tools
 (`xcode-select --install`) and [Homebrew](https://brew.sh/) first.
 
-Download the CLI from [GitHub Releases](https://github.com/DevonPeroutky/dotfiles/releases).
-After the first release is published, these commands download the latest version,
-verify its checksum, and install it on your PATH:
+Install the CLI once per Mac. These commands download the latest stable
+executable from [GitHub Releases](https://github.com/DevonPeroutky/dotfiles/releases),
+verify its checksum, and install it at `~/.local/bin/dotfiles`. Go is not required:
 
 ```sh
-curl -fLO https://github.com/DevonPeroutky/dotfiles/releases/latest/download/dotfiles-darwin-arm64
-curl -fLO https://github.com/DevonPeroutky/dotfiles/releases/latest/download/checksums.txt
 mkdir -p ~/.local/bin
-shasum -a 256 -c checksums.txt &&
-  chmod +x dotfiles-darwin-arm64 &&
-  mv dotfiles-darwin-arm64 ~/.local/bin/dotfiles
+
+(
+  set -e
+  install_dir=$(mktemp -d)
+  trap 'rm -rf "$install_dir"' EXIT
+  cd "$install_dir"
+  base="https://github.com/DevonPeroutky/dotfiles/releases/latest/download"
+  curl -fLO "$base/dotfiles-darwin-arm64"
+  curl -fLO "$base/checksums.txt"
+  shasum -a 256 -c checksums.txt
+  install -m 755 dotfiles-darwin-arm64 "$HOME/.local/bin/dotfiles"
+)
+
 export PATH="$HOME/.local/bin:$PATH"
+dotfiles --version
 ```
 
 The CLI needs an existing checkout; it does not download configuration or remember
 its location. Clone this repo where you want it to stay, then run:
 
 ```sh
-git clone git@github.com:DevonPeroutky/dotfiles.git ~/Development/dotfiles
+mkdir -p ~/Development
+git clone https://github.com/DevonPeroutky/dotfiles.git ~/Development/dotfiles
 cd ~/Development/dotfiles
 dotfiles setup --install
+```
+
+If you already cloned the repo, use that checkout instead. Once setup completes,
+reload your login shell:
+
+```sh
 exec zsh -l
+```
+
+Then check the installation from the checkout:
+
+```sh
 dotfiles doctor
 ```
 
+Doctor may report that secrets are not configured on a new Mac. Follow the
+private-file instructions below if you need credentials.
+
 Commands use the current directory as the checkout by default. From elsewhere,
-pass `--repo ~/Development/dotfiles` to setup or doctor. Go is only needed to build
-the CLI from source, not to run the downloaded executable.
+pass `--repo ~/Development/dotfiles` to setup or doctor. Setup adds `~/.local/bin`
+to your shell's PATH, so the command remains available in new shells.
+
+For future CLI versions, run just:
+
+```sh
+dotfiles self-update
+```
+
+You do not need to repeat the download and installation block. Configuration
+updates are separate: run `git pull --ff-only` in the checkout.
 
 `--install` installs the Brewfile packages without upgrading existing packages,
 then installs the Node LTS and pnpm versions declared in mise. Homebrew owns
