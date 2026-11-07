@@ -127,6 +127,10 @@ setup so it cannot write through them into another directory or checkout.
 - `.zshrc` loads shared `env.zsh`, optional `local.zsh`, optional `secrets.zsh`,
   `aliases.zsh`, then `tools.zsh` for mise and WorkTrunk initialization.
 - Edit linked configuration normally, then review and commit changes in this repo.
+- In Neovim or Neovide, press `<Space>gW` (Space, g, Shift+W) to search existing
+  worktrees and press Enter to switch. The picker shows Branch, Status, Commit,
+  and Message headings and preserves unsaved buffers. Use `:WorktreeSwitch` for
+  the same picker. Its configuration is in `home/.config/nvim/lua/plugins/worktrunk.lua`.
 - Add system tools to `packages/Brewfile` and runtimes to the mise config; rerun
   `dotfiles setup --install` to install them.
 - Keep personal utility scripts in `home/.local/bin/` when needed, and explicitly
